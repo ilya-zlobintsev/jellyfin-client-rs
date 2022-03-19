@@ -1,9 +1,10 @@
-use std::collections::HashMap;
-
-use reqwest::{header::HeaderValue, Client, Method, Request, Response, Url};
-use serde::Serialize;
-
 use crate::error::JellyfinError;
+use reqwest::{
+    header::{HeaderValue, IntoHeaderName},
+    Client, Method, Request, Response, Url,
+};
+use serde::Serialize;
+use std::collections::HashMap;
 
 pub struct JellyfinRequestBuilder<'a> {
     client: &'a Client,
@@ -17,17 +18,6 @@ impl<'a> JellyfinRequestBuilder<'a> {
         request.headers_mut().insert(
             reqwest::header::USER_AGENT,
             HeaderValue::from_static("Rust Jellyfin Library"),
-        );
-
-        request.headers_mut().insert(
-            "X-Emby-Authorization",
-            HeaderValue::from_str(&format!(
-                "MediaBrowser Client=JellyRust,Device={},DeviceId={},Version={}",
-                hostname::get().unwrap().to_str().unwrap(),
-                "69",
-                env!("CARGO_PKG_VERSION"),
-            ))
-            .expect("Invalid header values"),
         );
 
         Self { client, request }
@@ -47,18 +37,20 @@ impl<'a> JellyfinRequestBuilder<'a> {
     }
 
     pub fn auth(mut self, token: &str) -> Self {
-        self
-            .request
+        self.request
             .headers_mut()
             .insert("X-Emby-Token", token.to_owned().parse().unwrap());
+        self
+    }
 
+    pub fn header<K: IntoHeaderName>(mut self, key: K, val: HeaderValue) -> Self {
+        self.request.headers_mut().insert(key, val);
         self
     }
 
     pub fn query(mut self, params: HashMap<&str, String>) -> Self {
         {
             let mut query_pairs = self.request.url_mut().query_pairs_mut();
-
             for (key, value) in params {
                 query_pairs.append_pair(key, &value);
             }

@@ -7,9 +7,10 @@ use std::{collections::HashMap, sync::Arc};
 use error::JellyfinError;
 use model::{ImageType, Item, ItemType, ItemsResponse, MusicAlbum, UserInfo};
 use request_builder::JellyfinRequestBuilder;
-use reqwest::{Client, Method, Url};
+use reqwest::{header::HeaderValue, Client, Method, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use uuid::Uuid;
 
 use crate::model::AuthResponse;
 
@@ -29,7 +30,6 @@ pub struct AuthInfo {
 impl JellyfinApi {
     pub fn new(server_url: &str) -> Result<Self, JellyfinError> {
         let http = Client::new();
-
         let url = Url::parse(server_url)?;
 
         Ok(Self {
@@ -83,16 +83,29 @@ impl JellyfinApi {
         username: &str,
         password: &str,
     ) -> Result<(), JellyfinError> {
+        let x_emby_authorization = format!(
+            "MediaBrowser Client=jellyfin-rust,Device={},DeviceId={},Version={}",
+            hostname::get().unwrap().to_str().unwrap(),
+            Uuid::new_v4(),
+            env!("CARGO_PKG_VERSION"),
+        );
+        tracing::debug!("X-Emby-Authorization: {}", x_emby_authorization);
+
         let auth_response: AuthResponse = self
             .post("/Users/AuthenticateByName")
             .json(&json!({
                 "Username": username,
                 "Pw": password,
             }))?
+            .header(
+                "X-Emby-Authorization",
+                HeaderValue::from_str(&x_emby_authorization).unwrap(),
+            )
             .send()
             .await?
             .json()
             .await?;
+        tracing::debug!("Successfully authenticated: {:?}", auth_response);
 
         self.auth_info = Some(Arc::new(AuthInfo {
             token: auth_response.access_token,
