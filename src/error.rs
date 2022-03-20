@@ -21,10 +21,7 @@ impl Display for JellyfinError {
             JellyfinError::ParseError => "Parse error",
             JellyfinError::ServerError => "Server error",
             JellyfinError::BadRequest => "Bad request",
-            JellyfinError::RequestError(e) => {
-                tracing::info!("{:?}", e);
-                "Request error"
-            }
+            JellyfinError::RequestError(e) => "Request error",
             JellyfinError::UnhandledError(e) => e.as_str(),
         })
     }

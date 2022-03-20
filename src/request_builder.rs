@@ -60,7 +60,7 @@ impl<'a> JellyfinRequestBuilder<'a> {
     }
 
     pub async fn send(self) -> Result<Response, JellyfinError> {
-        tracing::info!("{} {}", self.request.method(), self.request.url());
+        tracing::trace!("{} {}", self.request.method(), self.request.url());
 
         let response = self.client.execute(self.request).await?;
 
