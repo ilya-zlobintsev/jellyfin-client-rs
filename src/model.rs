@@ -69,6 +69,7 @@ pub enum ItemType {
     MusicArtist(Item),
     Audio(Audio),
     MusicAlbum(MusicAlbum),
+    Playlist(Item),
 }
 
 impl ItemType {
@@ -77,6 +78,7 @@ impl ItemType {
             ItemType::MusicArtist(_) => "MusicArtist",
             ItemType::Audio(_) => "Audio",
             ItemType::MusicAlbum(_) => "MusicAlbum",
+            ItemType::Playlist(_) => "Playlist",
         }
     }
 }

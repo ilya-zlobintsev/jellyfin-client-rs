@@ -2,14 +2,13 @@ pub mod error;
 pub mod model;
 pub mod request_builder;
 
-use std::{collections::HashMap, sync::Arc};
-
 use error::JellyfinError;
-use model::{ImageType, Item, ItemType, ItemsResponse, MusicAlbum, UserInfo};
+use model::{Audio, ImageType, Item, ItemType, ItemsResponse, MusicAlbum, UserInfo};
 use request_builder::JellyfinRequestBuilder;
 use reqwest::{header::HeaderValue, Client, Method, Url};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::{collections::HashMap, sync::Arc};
 use uuid::Uuid;
 
 use crate::model::AuthResponse;
@@ -56,6 +55,12 @@ impl JellyfinApi {
 
         api.authenticate_with_token(token).await?;
 
+        Ok(api)
+    }
+    
+    pub fn new_with_auth_info(server_url: &str, auth_info: AuthInfo) -> Result<Self, JellyfinError> {
+        let mut api = Self::new(server_url)?;
+        api.auth_info = Some(Arc::new(auth_info));
         Ok(api)
     }
 
@@ -242,6 +247,28 @@ impl JellyfinApi {
                 _ => Err(JellyfinError::ServerError),
             })
             .collect()
+    }
+
+    pub async fn get_playlist_items(&self, playlist_id: &str) -> Result<Vec<Audio>, JellyfinError> {
+        let user_id = self
+            .auth_info
+            .as_ref()
+            .ok_or_else(|| JellyfinError::AuthorizationError)?
+            .user_id
+            .clone();
+
+        let mut params = HashMap::new();
+        params.insert("UserId", user_id);
+
+        let response: ItemsResponse<Audio> = self
+            .get(&format!("/Playlists/{}/Items", playlist_id))
+            .query(params)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok(response.items)
     }
 
     /// Size in (width, height)
