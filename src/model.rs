@@ -61,6 +61,8 @@ pub struct Audio {
     pub album: Option<String>,
     pub album_id: Option<String>,
     pub album_artist: Option<String>,
+    #[serde(rename = "RunTimeTicks")]
+    pub runtime_ticks: Option<u64>,
 }
 
 #[derive(Deserialize)]
